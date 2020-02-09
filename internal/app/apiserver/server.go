@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
-	"github.com/gopherschool/http-rest-api/internal/app/model"
-	"github.com/gopherschool/http-rest-api/internal/app/store"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"github.com/wmrsmile2018/GG/internal/app/model"
+	"github.com/wmrsmile2018/GG/internal/app/store"
 	"net/http"
 	"time"
 )
@@ -20,8 +22,14 @@ var (
 	errNotAuthenticated = errors.New("not authenticated")
 )
 
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
 const (
-	sessionName = "gopherschool"
+	sessionName = "hellomydear"
 	ctxKeyUser ctxKey = iota
 	ctxKeyRequestID
 )
@@ -33,14 +41,16 @@ type server struct {
 	logger *logrus.Logger
 	store store.Store
 	sessionsStore sessions.Store
+	hub *model.Hub
 }
 
-func newServer(store store.Store, sessionsStore sessions.Store) *server {
+func newServer(hub *model.Hub, store store.Store, sessionsStore sessions.Store) *server {
 	s := &server{
 		router: mux.NewRouter(),
 		logger: logrus.New(),
 		store:  store,
 		sessionsStore: sessionsStore,
+		hub: hub,
 	}
 
 	s.configureRouter()
@@ -58,11 +68,60 @@ func (s *server)  configureRouter(){
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string {"*"}))) // если запрос приходит с другого порта
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions",s.handleSessionsCreate()).Methods("POST")
-
+	s.router.HandleFunc("/chats", s.hadnleUsersChats()).Methods("GET")
+	s.router.HandleFunc("/ws", s.handleWS())
+	s.router.HandleFunc("/test", s.handleTest()).Methods("GET")
 	//private/***
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handleWhoAmI()).Methods("GET")
+}
+
+func (s *server) handleTest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+		params := r.Form
+		fmt.Println(params)
+		fmt.Println(params.Get("id"))
+	}
+}
+
+func (s *server) handleWS() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		err = r.ParseForm()
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		u, err := s.store.User().Find(r.Form.Get("id"))
+		if err != nil {
+			s.error(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		client:= model.NewClient(s.hub, conn, make(chan []byte, 256), u)
+		s.hub.Register <- client
+
+		go client.WritePump()
+		go client.ReadPump()
+	}
+}
+
+func (s *server) hadnleUsersChats() http.HandlerFunc {
+	return func (w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "home.html")
+	}
 }
 
 func (s *server) setRequestID(next http.Handler) http.Handler {
@@ -92,7 +151,6 @@ func (s *server) logRequest(next http.Handler) http.Handler {
 			http.StatusText(rw.code),
 			time.Now().Sub(start),
 			)
-
 	})
 }
 
@@ -111,7 +169,7 @@ func (s *server) authenticateUser(next http.Handler) http.Handler {
 			return
 		}
 
-		u, err := s.store.User().Find(id.(int))
+		u, err := s.store.User().Find(id.(string))
 		if err != nil {
 			s.error(w, r, http.StatusUnauthorized, errNotAuthenticated)
 			return
@@ -175,8 +233,9 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 			return
 		}
 		u := &model.User{
-			Email:             req.Email,
-			Password:          req.Password,
+			Email:				req.Email,
+			Password:			req.Password,
+			ID:					uuid.New().String(),
 		}
 		if err := s.store.User().Create(u); err != nil {
 			s.error(w, r, http.StatusUnprocessableEntity, err)
@@ -187,7 +246,7 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 }
 
 func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err error) {
-	s.respond(w, r, code, map[string]string{"error": err.Error()})
+	s.respond(w, r, code, map[string]string{"error__": err.Error()})
 }
 
 func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {

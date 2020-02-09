@@ -2,7 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
-	"github.com/gopherschool/http-rest-api/internal/app/store"
+	"github.com/wmrsmile2018/GG/internal/app/store"
 	_ "github.com/lib/pq" // ... анонимный импорт
 )
 

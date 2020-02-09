@@ -1,0 +1,10 @@
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a10', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a16', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a17', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a18', 'BIC', 20000);
+insert into balance values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a19', 'BIC', 20000);

@@ -2,8 +2,8 @@ package sqlstore
 
 import (
 	"database/sql"
-	"github.com/gopherschool/http-rest-api/internal/app/model"
-	"github.com/gopherschool/http-rest-api/internal/app/store"
+	"github.com/wmrsmile2018/GG/internal/app/model"
+	"github.com/wmrsmile2018/GG/internal/app/store"
 )
 
 //UserRepository ...
@@ -21,17 +21,20 @@ func (r *UserRepository) Create(u *model.User) (error) {
 		return err
 	}
 	return r.store.db.QueryRow(
-		"INSERT INTO users (email, encrypted_password) VALUES ($1, $2) RETURNING id",
+		"INSERT INTO users (id_user, email, encrypted_password) VALUES ($1, $2, $3) RETURNING id_user",
+			u.ID,
 			u.Email,
 			u.EncryptedPassword,
 		).Scan(&u.ID)
+
 }
+
 
 //FindByMail...
 func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 	u := &model.User{}
  	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password FROM users WHERE email = $1",
+		"SELECT id_user, email, encrypted_password FROM users WHERE email = $1",
 		email,
 		).Scan(
 			&u.ID,
@@ -47,10 +50,10 @@ func (r *UserRepository) FindByEmail(email string) (*model.User, error) {
 }
 
 //Find...
-func (r *UserRepository) Find(id int) (*model.User, error) {
+func (r *UserRepository) Find(id string) (*model.User, error) {
 	u := &model.User{}
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, encrypted_password FROM users WHERE id = $1",
+		"SELECT id_user, email, encrypted_password FROM users WHERE id_user = $1",
 		id,
 	).Scan(
 		&u.ID,

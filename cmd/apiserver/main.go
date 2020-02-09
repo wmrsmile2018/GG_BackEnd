@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/BurntSushi/toml"
-	"github.com/gopherschool/http-rest-api/internal/app/apiserver"
+	"github.com/wmrsmile2018/GG/internal/app/apiserver"
 	"log"
 )
 
@@ -19,7 +19,6 @@ func init() {
 func main() {
 	flag.Parse()
 
-
 	config := apiserver.NewConfig()
 	_, err := toml.DecodeFile(configPath, config)
 	if err != nil {
@@ -29,4 +28,5 @@ func main() {
 	if err := apiserver.Start(config); err != nil {
 		log.Fatal(err)
 	}
+
 }

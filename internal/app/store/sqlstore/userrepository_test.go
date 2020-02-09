@@ -1,12 +1,12 @@
 package sqlstore_test
 
 import (
-	"github.com/gopherschool/http-rest-api/internal/app/store"
-	"github.com/gopherschool/http-rest-api/internal/app/store/sqlstore"
+	"github.com/wmrsmile2018/GG/internal/app/store"
+	"github.com/wmrsmile2018/GG/internal/app/store/sqlstore"
 	"testing"
 
-	"github.com/gopherschool/http-rest-api/internal/app/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/wmrsmile2018/GG/internal/app/model"
 )
 
 func TestUserRepository_Create(t *testing.T) {

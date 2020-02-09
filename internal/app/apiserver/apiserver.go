@@ -2,7 +2,8 @@ package apiserver
 
 import (
 	"database/sql"
-	"github.com/gopherschool/http-rest-api/internal/app/store/sqlstore"
+	"github.com/wmrsmile2018/GG/internal/app/model"
+	"github.com/wmrsmile2018/GG/internal/app/store/sqlstore"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/sessions"
 	"net/http"
@@ -18,7 +19,10 @@ func Start(config *Config) error {
 	defer db.Close()
 	store := sqlstore.New(db)
 	sessionsStore := sessions.NewCookieStore([]byte(config.SessionsKey))
-	srv := newServer(store, sessionsStore)
+	hub := model.NewHub()
+	srv := newServer(hub, store, sessionsStore)
+	go hub.Run()
+
 	return http.ListenAndServe(config.BindAddr, handlers.LoggingHandler(os.Stdout, srv))
 
 }
