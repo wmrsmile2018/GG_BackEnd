@@ -65,7 +65,7 @@ create table messages (
 
 
 create table chats (
-  id_chat varchar primary key,
+  id_chat varchar,
   id_user varchar,
   type_chat type_chat
   );

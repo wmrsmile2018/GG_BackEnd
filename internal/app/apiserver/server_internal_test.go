@@ -17,7 +17,7 @@ import (
 func TestServer_AuthenticatedUser(t *testing.T) {
 	store := teststore.New()
 	u := model.TestUser(t)
-	store.User().Create(u)
+	store.User().CreateUser(u)
 	testCase := []struct {
 		name string
 		cookieValue map[interface{}]interface{}
@@ -103,7 +103,7 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 func TestServer_HandleSessionsCreate(t *testing.T) {
 	u := model.TestUser(t)
 	store := teststore.New()
-	store.User().Create(u)
+	store.User().CreateUser(u)
 	s := newServer(store, sessions.NewCookieStore([]byte("secret")))
 	testCases := []struct{
 		name string

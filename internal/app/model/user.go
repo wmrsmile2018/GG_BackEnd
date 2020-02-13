@@ -11,6 +11,7 @@ type User struct {
 	Email 				string	`json:"email"`
 	Password 			string	`json:"password,omitempty"`
 	EncryptedPassword 	string	`json:"-"`
+	Connection 			chan 	*ChatClients
 }
 
 func (u *User) Validate() error {

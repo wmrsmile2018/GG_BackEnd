@@ -36,12 +36,13 @@ const (
 
 type ctxKey int8
 
+//userConnection хранит в себе связь между юзером и WS
 type server struct {
-	router *mux.Router
-	logger *logrus.Logger
-	store store.Store
-	sessionsStore sessions.Store
-	hub *model.Hub
+	router			*mux.Router
+	logger			*logrus.Logger
+	store			store.Store
+	sessionsStore	sessions.Store
+	hub				*model.Hub
 }
 
 func newServer(hub *model.Hub, store store.Store, sessionsStore sessions.Store) *server {
@@ -68,7 +69,8 @@ func (s *server)  configureRouter(){
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string {"*"}))) // если запрос приходит с другого порта
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions",s.handleSessionsCreate()).Methods("POST")
-	s.router.HandleFunc("/chats", s.hadnleUsersChats()).Methods("GET")
+	s.router.HandleFunc("/general_chat", s.hadnleUsersGeneralChat()).Methods("GET")
+	s.router.HandleFunc("/local_chat", s.hadnleUsersLocalChat()).Methods("GET")
 	s.router.HandleFunc("/ws", s.handleWS())
 	s.router.HandleFunc("/test", s.handleTest()).Methods("GET")
 	//private/***
@@ -85,8 +87,26 @@ func (s *server) handleTest() http.HandlerFunc {
 			return
 		}
 		params := r.Form
-		fmt.Println(params)
-		fmt.Println(params.Get("id"))
+		chId, err := s.store.User().FindByChat(params.Get("id"))
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		for {
+			select {
+			case _, ok := <-chId:
+				if ok {
+					fmt.Println("true")
+				} else {
+					fmt.Println("val")
+					return
+				}
+			default:
+				fmt.Println("i am here")
+				return
+			}
+		}
 	}
 }
 
@@ -111,6 +131,8 @@ func (s *server) handleWS() http.HandlerFunc {
 		}
 
 		client:= model.NewClient(s.hub, conn, make(chan []byte, 256), u)
+		fmt.Println(client ,u.ID)
+		s.hub.UserConnection[u.ID] = client
 		s.hub.Register <- client
 
 		go client.WritePump()
@@ -118,9 +140,42 @@ func (s *server) handleWS() http.HandlerFunc {
 	}
 }
 
-func (s *server) hadnleUsersChats() http.HandlerFunc {
+func (s *server) hadnleUsersGeneralChat() http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "home.html")
+	}
+}
+
+func (s *server) hadnleUsersLocalChat() http.HandlerFunc {
+	return func (w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "home1.html")
+		err := r.ParseForm()
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+		params := r.Form
+		s.hub.Clients, err = s.store.User().FindByChat(params.Get("id"))
+		if err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+		for {
+			select {
+			case client, ok := <- s.hub.Clients:
+				if ok {
+					fmt.Println(client.ID)
+					fmt.Println(client.Email)
+				} else {
+					fmt.Println("fail")
+				}
+			default:
+				fmt.Println("pew pew")
+				return
+			}
+
+		}
+
 	}
 }
 
@@ -237,7 +292,7 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 			Password:			req.Password,
 			ID:					uuid.New().String(),
 		}
-		if err := s.store.User().Create(u); err != nil {
+		if err := s.store.User().CreateUser(u); err != nil {
 			s.error(w, r, http.StatusUnprocessableEntity, err)
 		}
 		u.Sanitize()
@@ -252,7 +307,10 @@ func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err err
 func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
 	w.WriteHeader(code)
 	if data != nil {
-		json.NewEncoder(w).Encode(data)
+		if err := json.NewEncoder(w).Encode(data); err != nil {
+			return
+		}
+
 	}
 }
 
