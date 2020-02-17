@@ -3,7 +3,6 @@ package model
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
@@ -44,18 +43,18 @@ func NewClient(h *Hub, c *websocket.Conn, s chan[]byte, user *User) *ChatClients
 	}
 }
 
-func (c *ChatClients) ReadPump() {
+func (c *ClientConn) ReadPump() {
 
 	defer func() {
-		c.hub.Unregister <- c
-		c.conn.Close()
+		c.Connection.hub.Unregister <- c
+		c.Connection.conn.Close()
 	}()
-	c.conn.SetReadLimit(maxMessageSize)
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.Connection.conn.SetReadLimit(maxMessageSize)
+	c.Connection.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.Connection.conn.SetPongHandler(func(string) error { c.Connection.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		var chat Chat
-		_, message, err := c.conn.ReadMessage()
+		_, message, err := c.Connection.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -65,51 +64,52 @@ func (c *ChatClients) ReadPump() {
 		json.Unmarshal(message, &chat)
 		chat.BytesMessage = []byte(chat.Message)
 		chat.BytesMessage = bytes.TrimSpace(bytes.Replace(chat.BytesMessage, newline, space, -1))
-		fmt.Println(chat.BytesMessage)
-		fmt.Println(string(chat.BytesMessage))
-		fmt.Println(chat.Message)
-		fmt.Println(chat.TypeChat)
-		go func(mes []byte) {c.hub.Message <- mes}(chat.BytesMessage)
+		//fmt.Println(chat.BytesMessage)
+		//fmt.Println(string(chat.BytesMessage))
+		//fmt.Println(chat.Message)
+		//fmt.Println(chat.TypeChat)
+		c.Connection.hub.Message <- chat.BytesMessage
+		//go func(mes []byte) {c.hub.Message <- mes}(chat.BytesMessage)
 		//c.hub.Message <- chat.BytesMessage
-		c.hub.IsGeneralChat = chat.TypeChat == "general"
+		c.Connection.hub.IsGeneralChat = chat.TypeChat == "general"
 	}
 }
 
-func (c *ChatClients) WritePump() {
+func (c *ClientConn) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		c.Connection.conn.Close()
 	}()
 	for {
 		select {
-		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+		case message, ok := <-c.Connection.send:
+			c.Connection.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.Connection.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
+			w, err := c.Connection.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
 				return
 			}
 			w.Write(message)
 
 			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
+			n := len(c.Connection.send)
 			for i := 0; i < n; i++ {
 				w.Write(newline)
-				w.Write(<-c.send)
+				w.Write(<-c.Connection.send)
 			}
 
 			if err := w.Close(); err != nil {
 				return
 			}
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			c.Connection.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.Connection.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}

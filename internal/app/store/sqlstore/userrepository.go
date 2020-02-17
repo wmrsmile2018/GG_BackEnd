@@ -87,8 +87,8 @@ func (r *UserRepository) Find(id_user string) (*model.User, error) {
 
 
 //FincByChat
-func (r *UserRepository) FindByChat(idChat string) (chan *model.User, error) {
-	chU := make(chan *model.User)
+func (r *UserRepository) FindByChat(idChat string) (map [*model.User]bool, error) {
+	mapU := make(map[*model.User]bool)
 	u := model.User{}
 	rows, err := r.store.db.Query(
 		"SELECT id_user, email FROM users WHERE id_user IN (SELECT id_user FROM chats WHERE id_chat = $1)", idChat)
@@ -107,12 +107,11 @@ func (r *UserRepository) FindByChat(idChat string) (chan *model.User, error) {
 			}
 			return nil, err
 		}
-
-		go func(u model.User){chU <- &u}(u)
+		go func(user model.User){mapU[&user] = true}(u)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return chU, nil
+	return mapU, nil
 }

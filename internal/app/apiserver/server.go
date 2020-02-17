@@ -87,26 +87,15 @@ func (s *server) handleTest() http.HandlerFunc {
 			return
 		}
 		params := r.Form
-		chId, err := s.store.User().FindByChat(params.Get("id"))
+		mapU, err := s.store.User().FindByChat(params.Get("id"))
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
-
-		for {
-			select {
-			case _, ok := <-chId:
-				if ok {
-					fmt.Println("true")
-				} else {
-					fmt.Println("val")
-					return
-				}
-			default:
-				fmt.Println("i am here")
-				return
-			}
+		for U := range mapU {
+			fmt.Println("______________________________________________________",'\n',U)
 		}
+
 	}
 }
 
@@ -131,12 +120,21 @@ func (s *server) handleWS() http.HandlerFunc {
 		}
 
 		client:= model.NewClient(s.hub, conn, make(chan []byte, 256), u)
-		fmt.Println(client ,u.ID)
-		s.hub.UserConnection[u.ID] = client
-		s.hub.Register <- client
+		clientConn := &model.ClientConn{
+			Connection: client,
+			Id:			u.ID,
+		}
+		s.hub.Register <- clientConn
+		s.hub.UserConnection[u.ID] = clientConn
+		//s.hub.ConnectionUser[clientConn] = u
+		//for conn := range s.hub.UserConnection {
+		//	fmt.Println("server_________ con",conn)
+		//}
 
-		go client.WritePump()
-		go client.ReadPump()
+		fmt.Println("server_____conn", s.hub.UserConnection[u.ID])
+		fmt.Println("server_____user", u)
+		go clientConn.WritePump()
+		go clientConn.ReadPump()
 	}
 }
 
@@ -160,21 +158,9 @@ func (s *server) hadnleUsersLocalChat() http.HandlerFunc {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
-		for {
-			select {
-			case client, ok := <- s.hub.Clients:
-				if ok {
-					fmt.Println(client.ID)
-					fmt.Println(client.Email)
-				} else {
-					fmt.Println("fail")
-				}
-			default:
-				fmt.Println("pew pew")
-				return
-			}
-
-		}
+		//for U := range s.hub.Clients{
+		//	fmt.Println(U)
+		//}
 
 	}
 }

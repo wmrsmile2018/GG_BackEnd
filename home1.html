@@ -40,7 +40,7 @@
             };
 
             if (window["WebSocket"]) {
-                conn = new WebSocket("ws://" + document.location.host + "/ws" + user_id1);
+                conn = new WebSocket("ws://" + document.location.host + "/ws" + user_id4);
                 window.conn = conn;
                 conn.onclose = function (evt) {
                     var item = document.createElement("div");
