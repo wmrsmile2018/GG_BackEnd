@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"github.com/wmrsmile2018/GG/internal/app/model"
+	"github.com/wmrsmile2018/GG/internal/app/service"
 	"github.com/wmrsmile2018/GG/internal/app/store"
 	"net/http"
 	"time"
@@ -36,16 +37,15 @@ const (
 
 type ctxKey int8
 
-//userConnection хранит в себе связь между юзером и WS
 type server struct {
 	router			*mux.Router
 	logger			*logrus.Logger
 	store			store.Store
 	sessionsStore	sessions.Store
-	hub				*model.Hub
+	hub				*service.Hub
 }
 
-func newServer(hub *model.Hub, store store.Store, sessionsStore sessions.Store) *server {
+func newServer(hub *service.Hub, store store.Store, sessionsStore sessions.Store) *server {
 	s := &server{
 		router: mux.NewRouter(),
 		logger: logrus.New(),
@@ -53,7 +53,6 @@ func newServer(hub *model.Hub, store store.Store, sessionsStore sessions.Store) 
 		sessionsStore: sessionsStore,
 		hub: hub,
 	}
-
 	s.configureRouter()
 
 	return s
@@ -81,20 +80,22 @@ func (s *server)  configureRouter(){
 
 func (s *server) handleTest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
+		message := &model.Message{
+			IdMessage:    "a0eebc19-9c0b-4ef8-bb6d-6bb9bd380a10",
+			TypeChat:     "twosome",
+			IdChat:       "a0eebc79-9c0b-4ef8-bb6d-6bb9bd380a10",
+			User:         nil,
+			IdUser:       "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a10",
+			TimeCreateM:  0,
+			BytesMessage: nil,
+			Message:      "pewpew",
+		}
+		mes, err := s.store.User().CreateMessage(message)
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
-			return
 		}
-		params := r.Form
-		mapU, err := s.store.User().FindByChat(params.Get("id"))
-		if err != nil {
-			s.error(w, r, http.StatusBadRequest, err)
-			return
-		}
-		for U := range mapU {
-			fmt.Println("______________________________________________________",'\n',U)
-		}
+		s.respond(w, r, http.StatusCreated, message)
+		fmt.Println(mes)
 
 	}
 }
@@ -119,20 +120,13 @@ func (s *server) handleWS() http.HandlerFunc {
 			return
 		}
 
-		client:= model.NewClient(s.hub, conn, make(chan []byte, 256), u)
-		clientConn := &model.ClientConn{
+		client:= service.NewClient(s.hub, conn, make(chan *model.Message, 256), u)
+		clientConn := &service.ClientConn{
 			Connection: client,
 			Id:			u.ID,
 		}
 		s.hub.Register <- clientConn
 		s.hub.UserConnection[u.ID] = clientConn
-		//s.hub.ConnectionUser[clientConn] = u
-		//for conn := range s.hub.UserConnection {
-		//	fmt.Println("server_________ con",conn)
-		//}
-
-		fmt.Println("server_____conn", s.hub.UserConnection[u.ID])
-		fmt.Println("server_____user", u)
 		go clientConn.WritePump()
 		go clientConn.ReadPump()
 	}
@@ -153,15 +147,11 @@ func (s *server) hadnleUsersLocalChat() http.HandlerFunc {
 			return
 		}
 		params := r.Form
-		s.hub.Clients, err = s.store.User().FindByChat(params.Get("id"))
+		s.hub.Users, err = s.store.User().FindByChat(params.Get("id"))
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
-		//for U := range s.hub.Clients{
-		//	fmt.Println(U)
-		//}
-
 	}
 }
 
@@ -232,7 +222,6 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 	type request struct { // ожидаемые поля от пользователя при регистрации
 		Email		string 	`json:"email"`
 		Password	string 	`json:"password"`
-		//EncryptedPassword string `json:encrypted_password`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &request{}
@@ -258,7 +247,6 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 			return
 		}
 		s.respond(w, r, http.StatusOK, nil)
-
 	}
 }
 

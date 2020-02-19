@@ -1,9 +1,12 @@
-package model
+package service
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/wmrsmile2018/GG/internal/app/model"
 	"log"
 	"time"
 )
@@ -20,21 +23,16 @@ var (
 	space   = []byte{' '}
 )
 
-type Chat struct {
-	TypeChat		string
-	BytesMessage	[]byte
-	Message 		string
-}
 type ChatClients struct {
-	user 	*User
+	user 	*model.User
 	hub 	*Hub
 	conn 	*websocket.Conn
-	send 	chan []byte
+	send 	chan *model.Message
 }
 
 
 
-func NewClient(h *Hub, c *websocket.Conn, s chan[]byte, user *User) *ChatClients {
+func NewClient(h *Hub, c *websocket.Conn, s chan *model.Message, user *model.User) *ChatClients {
 	return &ChatClients{
 		hub:  h,
 		conn: c,
@@ -44,7 +42,6 @@ func NewClient(h *Hub, c *websocket.Conn, s chan[]byte, user *User) *ChatClients
 }
 
 func (c *ClientConn) ReadPump() {
-
 	defer func() {
 		c.Connection.hub.Unregister <- c
 		c.Connection.conn.Close()
@@ -53,7 +50,7 @@ func (c *ClientConn) ReadPump() {
 	c.Connection.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Connection.conn.SetPongHandler(func(string) error { c.Connection.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		var chat Chat
+		var mes model.Message
 		_, message, err := c.Connection.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -61,17 +58,25 @@ func (c *ClientConn) ReadPump() {
 			}
 			break
 		}
-		json.Unmarshal(message, &chat)
-		chat.BytesMessage = []byte(chat.Message)
-		chat.BytesMessage = bytes.TrimSpace(bytes.Replace(chat.BytesMessage, newline, space, -1))
-		//fmt.Println(chat.BytesMessage)
-		//fmt.Println(string(chat.BytesMessage))
-		//fmt.Println(chat.Message)
-		//fmt.Println(chat.TypeChat)
-		c.Connection.hub.Message <- chat.BytesMessage
-		//go func(mes []byte) {c.hub.Message <- mes}(chat.BytesMessage)
-		//c.hub.Message <- chat.BytesMessage
-		c.Connection.hub.IsGeneralChat = chat.TypeChat == "general"
+		json.Unmarshal(message, &mes)
+		users , err := c.Connection.hub.Store.User().FindByChat(mes.IdChat)
+		if err != nil {
+			return
+		}
+		for client := range c.Connection.hub.Users {
+			fmt.Println("__________________client ",client)
+		}
+		mes.BytesMessage = []byte(mes.Message)
+		mes.BytesMessage = bytes.TrimSpace(bytes.Replace(mes.BytesMessage, newline, space, -1))
+		mes.User, err =	c.Connection.hub.Store.User().Find(mes.IdUser)
+		if err != nil {
+			return
+		}
+		mes.TimeCreateM = time.Now().UnixNano()
+		mes.IdMessage = uuid.New().String()
+		c.Connection.hub.Users = users
+		c.Connection.hub.Message <- &mes
+		c.Connection.hub.IsGeneralChat = (mes.TypeChat == "general")
 	}
 }
 
@@ -95,13 +100,28 @@ func (c *ClientConn) WritePump() {
 			if err != nil {
 				return
 			}
-			w.Write(message)
-
+ 			data, err := json.Marshal(message)
+ 			if err != nil {
+				return
+			}
+			_, err = c.Connection.hub.Store.User().CreateMessage(message)
+			if err != nil {
+				return
+			}
+			//w.Write(data)
+			fmt.Println(data)
+			w.Write(message.BytesMessage)
 			// Add queued chat messages to the current websocket message.
 			n := len(c.Connection.send)
 			for i := 0; i < n; i++ {
 				w.Write(newline)
-				w.Write(<-c.Connection.send)
+				data, err := json.Marshal(<-c.Connection.send)
+				if err != nil {
+					return
+				}
+				//w.Write(data)
+				fmt.Println(data)
+				w.Write(message.BytesMessage)
 			}
 
 			if err := w.Close(); err != nil {

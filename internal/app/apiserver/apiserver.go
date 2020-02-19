@@ -2,10 +2,10 @@ package apiserver
 
 import (
 	"database/sql"
-	"github.com/wmrsmile2018/GG/internal/app/model"
-	"github.com/wmrsmile2018/GG/internal/app/store/sqlstore"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/sessions"
+	"github.com/wmrsmile2018/GG/internal/app/service"
+	"github.com/wmrsmile2018/GG/internal/app/store/sqlstore"
 	"net/http"
 	"os"
 )
@@ -19,7 +19,7 @@ func Start(config *Config) error {
 	defer db.Close()
 	store := sqlstore.New(db)
 	sessionsStore := sessions.NewCookieStore([]byte(config.SessionsKey))
-	hub := model.NewHub()
+	hub := service.NewHub(store)
 	srv := newServer(hub, store, sessionsStore)
 	go hub.Run()
 

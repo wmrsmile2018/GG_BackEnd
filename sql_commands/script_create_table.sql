@@ -51,11 +51,12 @@ create table friends (
 
 
 create table messages (
-  id_messages int primary key,
+  id_message varchar primary key,
   id_user varchar,
   id_chat varchar,
   text_mes text,
-  creation_time timestamp
+  creation_time timestamp,
+  type_chat type_chat
   );
 
 
@@ -63,12 +64,17 @@ create table messages (
 \! tput setaf 1; "___________________________create table chats ____________________________";
 \! tput setaf 2;
 
+create table users_chats (
+    id_chat varchar,
+    id_user varchar
+);
+
 
 create table chats (
-  id_chat varchar,
+  id_chat varchar primary key,
   id_user varchar,
   type_chat type_chat
-  );
+);
 
 
 \! tput setaf 3; "____________________________________________________________________________________";
