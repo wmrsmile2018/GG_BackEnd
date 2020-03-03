@@ -41,14 +41,14 @@
                 message.message = msg.value;
                 message.TypeChat = 'twosome';
                 message.IdChat = chat_id1;
-                message.IdUser = user_id1;
+                message.IdUser = user_id4;
                 conn.send(JSON.stringify(message));
                 msg.value = "";
                 return false;
             };
 
             if (window["WebSocket"]) {
-                conn = new WebSocket("ws://" + document.location.host + "/ws" + "?id=" + user_id2);
+                conn = new WebSocket("ws://" + document.location.host + "/ws" + "?id=" + user_id4);
                 window.conn = conn;
                 conn.onclose = function (evt) {
                     var item = document.createElement("div");

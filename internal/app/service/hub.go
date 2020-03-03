@@ -1,38 +1,36 @@
 package service
 
 import (
+	"bytes"
+	"fmt"
+	"github.com/google/uuid"
 	"github.com/wmrsmile2018/GG/internal/app/model"
 	"github.com/wmrsmile2018/GG/internal/app/store"
+	"time"
+)
+
+var (
+	newline = []byte{'\n'}
+	space   = []byte{' '}
 )
 
 type Hub struct {
-	AllConnections map[*ClientConn]bool
-	UserConnection map[string]*ClientConn
-	Message        chan *model.Message
-	Register       chan *ClientConn
-	Unregister     chan *ClientConn
-	Users          map[*model.User]bool
-	IsGeneralChat  bool
-	text           string
-	Store          store.Store
-}
-
-
-type ClientConn struct {
-	Id			string
-	Connection	*ChatClients
+	AllConnections map[*ChatClients]bool
+	Send			chan *model.Send
+	Register		chan *ChatClients
+	Unregister		chan *ChatClients
+	Store			store.Store
+	AllConns		map[string]map[*ChatClients]bool
 }
 
 func NewHub(store store.Store) *Hub {
 	return &Hub{
-		Message:        make(chan *model.Message),
-		Register:       make(chan *ClientConn),
-		Unregister:     make(chan *ClientConn),
-		AllConnections: make(map[*ClientConn]bool), // clients
-		UserConnection: make(map[string]*ClientConn),
-		Users:          make(map[*model.User]bool),
-		IsGeneralChat:  false,
+		Register:       make(chan *ChatClients),
+		Unregister:     make(chan *ChatClients),
+		AllConnections: make(map[*ChatClients]bool), // clients
 		Store:          store,
+		AllConns: 		make(map[string]map[*ChatClients]bool),
+		Send:			make(chan *model.Send),
 	}
 }
 
@@ -41,36 +39,67 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.Register:
 			h.AllConnections[client] = true
+			fmt.Println("connections:  ", len(h.AllConnections))
 		case client := <-h.Unregister:
 			if _, ok := h.AllConnections[client]; ok {
+				delete(h.AllConns[client.user.ID], client)
 				delete(h.AllConnections, client)
-				close(client.Connection.send)
+				close(client.send)
 			}
-		case message := <-h.Message:
-			if h.IsGeneralChat {
-				for conn := range h.AllConnections {
-					select {
-					case conn.Connection.send <- message:
-					default:
-						close(conn.Connection.send)
-						delete(h.AllConnections, conn)
+		case send := <-h.Send:
+			send.Message.IdMessage = uuid.New().String()
+			send.Message.BytesMessage = []byte(send.Message.Message)
+			send.Message.BytesMessage = bytes.TrimSpace(bytes.Replace(send.Message.BytesMessage, newline, space, -1))
+			send.Message.TimeCreateM = time.Now().Unix()
+
+			if send.Message.TypeChat == "general" {
+				h.Store.User().CreateMessage(send.Message)
+				if len(h.AllConnections) != 0 {
+					for conn := range h.AllConnections {
+						var s model.Send
+						s.Message = send.Message
+						s.User = conn.user
+						select {
+						case conn.send <- &s:
+						default:
+							close(conn.send)
+							delete(h.AllConns[conn.user.ID], conn)
+							delete(h.AllConnections, conn)
+						}
 					}
 				}
 			} else {
-				for user := range h.Users {
-					conn := h.UserConnection[user.ID]
-					if conn == nil {
-						continue
-					} else {
-						select {
-						case conn.Connection.send <-message:
-						default:
-							close(conn.Connection.send)
-							delete(h.AllConnections, conn)
+				users := getUsers(h, send.Message.IdChat)
+				if users != nil  && users[send.User.ID] {
+					h.Store.User().CreateMessage(send.Message)
+					for user := range users {
+						connections := h.AllConns[user]
+						if len(connections) != 0 {
+							for conn := range connections {
+								fmt.Println(conn, conn.user)
+								var s model.Send
+								s.Message = send.Message
+								s.User = conn.user
+								select {
+								case conn.send <- &s:
+								default:
+									close(conn.send)
+									delete(h.AllConns[conn.user.ID], conn)
+									delete(h.AllConnections, conn)
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+}
+
+func getUsers (h *Hub, id string)  map[string]bool {
+	users, err := h.Store.User().FindByChat(id)
+	if err != nil {
+		return nil
+	}
+	return users
 }

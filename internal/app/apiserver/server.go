@@ -66,6 +66,7 @@ func (s *server)  configureRouter(){
 	s.router.Use(s.setRequestID) // подставляет для каждого входящего запроса уникальный id для передачи в заголовки и для лога
 	s.router.Use(s.logRequest)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string {"*"}))) // если запрос приходит с другого порта
+	s.router.HandleFunc("/getMessages", s.handleGetMessage()).Methods("GET")
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions",s.handleSessionsCreate()).Methods("POST")
 	s.router.HandleFunc("/general_chat", s.hadnleUsersGeneralChat()).Methods("GET")
@@ -84,31 +85,20 @@ func (s *server) handleTest() http.HandlerFunc {
 			IdMessage:    "a0eebc19-9c0b-4ef8-bb6d-6bb9bd380a10",
 			TypeChat:     "twosome",
 			IdChat:       "a0eebc79-9c0b-4ef8-bb6d-6bb9bd380a10",
-			User:         nil,
 			IdUser:       "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a10",
 			TimeCreateM:  0,
 			BytesMessage: nil,
 			Message:      "pewpew",
 		}
-		mes, err := s.store.User().CreateMessage(message)
-		if err != nil {
-			s.error(w, r, http.StatusBadRequest, err)
-		}
-		s.respond(w, r, http.StatusCreated, message)
-		fmt.Println(mes)
+		user, err := s.store.User().FindByChat(message.IdChat)
+		fmt.Println(user ,err)
 
 	}
 }
 
 func (s *server) handleWS() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			s.error(w, r, http.StatusBadRequest, err)
-			return
-		}
-
-		err = r.ParseForm()
+		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
@@ -120,15 +110,16 @@ func (s *server) handleWS() http.HandlerFunc {
 			return
 		}
 
-		client:= service.NewClient(s.hub, conn, make(chan *model.Message, 256), u)
-		clientConn := &service.ClientConn{
-			Connection: client,
-			Id:			u.ID,
+		client:= service.NewClient(s.hub, ws, u, make(chan *model.Send, 512))
+		s.hub.Register <- client
+		if len(s.hub.AllConns[u.ID]) == 0 {
+			s.hub.AllConns[u.ID] = make(map[*service.ChatClients]bool)
 		}
-		s.hub.Register <- clientConn
-		s.hub.UserConnection[u.ID] = clientConn
-		go clientConn.WritePump()
-		go clientConn.ReadPump()
+		conn := s.hub.AllConns[u.ID]
+		conn[client] = true
+
+		go client.WritePump()
+		go client.ReadPump()
 	}
 }
 
@@ -141,13 +132,13 @@ func (s *server) hadnleUsersGeneralChat() http.HandlerFunc {
 func (s *server) hadnleUsersLocalChat() http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "home1.html")
+	}
+}
+
+func (s *server) handleGetMessage() http.HandlerFunc {
+	return func (w http.ResponseWriter, r *http.Request) {
+
 		err := r.ParseForm()
-		if err != nil {
-			s.error(w, r, http.StatusBadRequest, err)
-			return
-		}
-		params := r.Form
-		s.hub.Users, err = s.store.User().FindByChat(params.Get("id"))
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return

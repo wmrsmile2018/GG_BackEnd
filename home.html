@@ -7,10 +7,16 @@
             var conn;
             var msg = document.getElementById("msg");
             var log = document.getElementById("log");
-            var user_id = "?id=a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a10";
-            var chat = {
+            var user_id1 = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a10";
+            var user_id2 = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+            var user_id3 = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12";
+            var user_id4 = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13";
+
+            var message = {
                 TypeChat:   '',
-                Message:    ''
+                Message:    '',
+                IdChat:     '',
+                IdUser:     '',
             }
 
                 function appendLog(item) {
@@ -29,15 +35,17 @@
                     return false;
                 }
 
-                chat.message = msg.value;
-                chat.TypeChat = 'general';
-                conn.send(JSON.stringify(chat));
+                message.message = msg.value;
+                message.TypeChat = 'general';
+                message.IdUser = user_id4;
+                message.IdChat = 'a0eebc10-1c0b-1ef8-bb1d-1bb1bd111a10';
+                conn.send(JSON.stringify(message));
                 msg.value = "";
                 return false;
             };
 
             if (window["WebSocket"]) {
-                conn = new WebSocket("ws://" + document.location.host + "/ws" + user_id);
+                conn = new WebSocket("ws://" + document.location.host + "/ws" + "?id=" + user_id1);
                 window.conn = conn;
                 conn.onclose = function (evt) {
                     var item = document.createElement("div");

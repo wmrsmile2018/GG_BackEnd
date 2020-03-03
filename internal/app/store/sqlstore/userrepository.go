@@ -2,7 +2,6 @@ package sqlstore
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/wmrsmile2018/GG/internal/app/model"
 	"github.com/wmrsmile2018/GG/internal/app/store"
 	"time"
@@ -18,7 +17,6 @@ func (r *UserRepository) CreateUser(u *model.User) (error) {
 	if err := u.Validate(); err != nil {
 		return err
 	}
-
 	if err := u.BeforeCreate(); err != nil {
 		return err
 	}
@@ -33,9 +31,8 @@ func (r *UserRepository) CreateUser(u *model.User) (error) {
 
 // CreateMessage
 func (r *UserRepository) CreateMessage(message *model.Message) (*model.Message, error) {
-	//var id_mes string
 	mes := &model.Message{}
-	timestamp := time.Unix(0, message.TimeCreateM).Format("2006-01-02, 15:04:05")
+	timestamp := time.Unix(message.TimeCreateM, 0).Format("2006-01-02, 15:04:05")
 	if err := r.store.db.QueryRow(
 		"INSERT INTO messages VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
 		message.IdMessage,
@@ -95,32 +92,29 @@ func (r *UserRepository) Find(idUser string) (*model.User, error) {
 	return u, nil
 }
 
-
 //FincByChat
-func (r *UserRepository) FindByChat(idChat string) (map [*model.User]bool, error) {
-	mapU := make(map[*model.User]bool)
-	u := model.User{}
+func (r *UserRepository) FindByChat(idChat string) (map[string]bool, error) {
+	mapU := make(map[string]bool)
 	rows, err := r.store.db.Query(
-		"SELECT id_user, email FROM users WHERE id_user IN (SELECT id_user FROM users_chats WHERE id_chat = $1)", idChat)
+		"SELECT id_user FROM users WHERE id_user IN (SELECT id_user FROM users_chats WHERE id_chat = $1)",
+		idChat,
+		)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 	for rows.Next() {
+		var UId string
 		if err = rows.Scan(
-			&u.ID,
-			&u.Email,
+			&UId,
 		); err != nil {
 			if err == sql.ErrNoRows {
 				return nil, store.ErrRecordNotFound
 			}
 			return nil, err
 		}
-		fmt.Println("_________________store", u)
-		go func(user model.User){mapU[&user] = true}(u)
+		mapU[UId] = true
 	}
-
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
