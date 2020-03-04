@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/BurntSushi/toml"
-	"github.com/wmrsmile2018/GG/internal/app/apiserver"
+	"github.com/wmrsmile2018/GG/internal/app/controller"
 	"log"
 )
 
@@ -19,13 +19,13 @@ func init() {
 func main() {
 	flag.Parse()
 
-	config := apiserver.NewConfig()
+	config := controller.NewConfig()
 	_, err := toml.DecodeFile(configPath, config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := apiserver.Start(config); err != nil {
+	if err := controller.Start(config); err != nil {
 		log.Fatal(err)
 	}
 
