@@ -1,4 +1,4 @@
-package apiserver
+package controller
 
 import (
 	"database/sql"
@@ -39,5 +39,3 @@ func newDB(databaseURL string) (*sql.DB, error) {
 
 	return db, nil
 }
-
-	

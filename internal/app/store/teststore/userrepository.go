@@ -8,16 +8,36 @@ import (
 //UserRepository ...
 type UserRepository struct {
 	store *Store
-	users map[int]*model.User
+	users map[string]*model.User
 }
 
-func (r *UserRepository) Find(id int) (*model.User, error) {
-	u, ok := r.users[id]
+func (r *UserRepository) CreateUser(*model.User) error {
+	panic("implement me")
+}
+
+func (r *UserRepository) Find(idUser string) (*model.User, error) {
+	u, ok := r.users[idUser]
 	if !ok {
 		return nil, store.ErrRecordNotFound
 	}
 	return u, nil
 }
+
+func (r *UserRepository) FindByChat(idChat string) (map[string]bool, error) {
+	panic("implement me")
+}
+
+func (r *UserRepository) CreateMessage(message *model.Message) (*model.Message, error) {
+	panic("implement me")
+}
+//
+//func (r *UserRepository) Find(id int) (*model.User, error) {
+//	u, ok := r.users[id]
+//	if !ok {
+//		return nil, store.ErrRecordNotFound
+//	}
+//	return u, nil
+//}
 
 // Create ...
 func (r *UserRepository) Create(u *model.User) error {

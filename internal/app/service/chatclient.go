@@ -9,25 +9,25 @@ import (
 )
 
 const (
-	writeWait 		= 10 * time.Second
-	pongWait 		= 60 * time.Second
-	pingPeriod 		= (pongWait * 9) / 10
-	maxMessageSize 	= 512
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
+	maxMessageSize = 512
 )
 
 type ChatClients struct {
-	user    *model.User
-	hub     *Hub
-	conn    *websocket.Conn
-	send 	chan *model.Send
+	user *model.User
+	hub  *Hub
+	conn *websocket.Conn
+	send chan *model.Send
 }
 
 func NewClient(h *Hub, c *websocket.Conn, user *model.User, s chan *model.Send) *ChatClients {
 	return &ChatClients{
-		hub:		h,
-		conn:		c,
-		user:		user,
-		send:		s,
+		hub:  h,
+		conn: c,
+		user: user,
+		send: s,
 	}
 }
 
@@ -46,7 +46,7 @@ func (c *ChatClients) ReadPump() {
 
 	for {
 		var message model.Message
-		var send	model.Send
+		var send model.Send
 		_, data, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -80,8 +80,8 @@ func (c *ChatClients) WritePump() {
 			if err != nil {
 				return
 			}
- 			_, err = json.Marshal(send)
- 			if err != nil {
+			_, err = json.Marshal(send)
+			if err != nil {
 				return
 			}
 			//w.Write(data)
@@ -109,4 +109,3 @@ func (c *ChatClients) WritePump() {
 		}
 	}
 }
-

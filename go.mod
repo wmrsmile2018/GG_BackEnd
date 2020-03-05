@@ -19,6 +19,7 @@ require (
 	github.com/go-pg/migrations/v7 v7.1.6 // indirect
 	github.com/go-pg/pg/v9 v9.0.1 // indirect
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
+	github.com/golang/gddo v0.0.0-20200219175727-df439dd5819e
 	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.1.1
@@ -35,5 +36,4 @@ require (
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
 	golang.org/x/crypto v0.0.0-20191112222119-e1110fd1c708
 	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9 // indirect
-	google.golang.org/appengine v1.6.5 // indirect
 )

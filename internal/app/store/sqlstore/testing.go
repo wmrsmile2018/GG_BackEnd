@@ -8,7 +8,7 @@ import (
 )
 
 //TetstStore ...
-func TestDB (t *testing.T, databaseURL string) (*sql.DB, func(...string)) {
+func TestDB(t *testing.T, databaseURL string) (*sql.DB, func(...string)) {
 	t.Helper() // собщаем что это тестовый метод
 
 	db, err := sql.Open("postgres", databaseURL)
@@ -29,4 +29,3 @@ func TestDB (t *testing.T, databaseURL string) (*sql.DB, func(...string)) {
 		db.Close()
 	}
 }
-

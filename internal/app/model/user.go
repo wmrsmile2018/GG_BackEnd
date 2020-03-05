@@ -7,10 +7,10 @@ import (
 )
 
 type User struct {
-	ID 					string 	`json:"id"`
-	Email 				string	`json:"email"`
-	Password 			string	`json:"password,omitempty"`
-	EncryptedPassword 	string	`json:"-"`
+	ID                string `json:"id"`
+	Email             string `json:"email"`
+	Password          string `json:"password,omitempty"`
+	EncryptedPassword string `json:"-"`
 }
 
 func (u *User) Validate() error {
@@ -19,11 +19,11 @@ func (u *User) Validate() error {
 		u,
 		validation.Field(&u.Email, validation.Required, is.Email),
 		validation.Field(&u.Password, validation.By(requiredIf(u.EncryptedPassword == "")), validation.Length(6, 100)),
-		)
+	)
 }
 
 //BeforeCreate ...
-func (u *User) BeforeCreate() error  {
+func (u *User) BeforeCreate() error {
 	if len(u.Password) > 0 {
 		enc, err := EncryptString(u.Password)
 		if err != nil {

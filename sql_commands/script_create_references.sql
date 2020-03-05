@@ -16,4 +16,3 @@ alter table history_structure add constraint histories_history_structure foreign
 
 /* constraint parent_table: commands */
 alter table command_structure add constraint commands_command_structure foreign key (id_command) references commands (id_command);
-

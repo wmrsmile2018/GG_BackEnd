@@ -1,8 +1,8 @@
 package model_test
 
 import (
-	"github.com/wmrsmile2018/GG/internal/app/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/wmrsmile2018/GG/internal/app/model"
 	"testing"
 )
 
@@ -66,7 +66,7 @@ func TestUser_Validate(t *testing.T) {
 			isValid: true,
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.isValid {
@@ -74,7 +74,7 @@ func TestUser_Validate(t *testing.T) {
 			} else {
 				assert.Error(t, tc.u().Validate())
 			}
-			
+
 		})
 	}
 }

@@ -2,12 +2,12 @@ package sqlstore
 
 import (
 	"database/sql"
-	"github.com/wmrsmile2018/GG/internal/app/store"
 	_ "github.com/lib/pq" // ... анонимный импорт
+	"github.com/wmrsmile2018/GG/internal/app/store"
 )
 
 type Store struct {
-	db *sql.DB
+	db             *sql.DB
 	userRepository *UserRepository
 }
 

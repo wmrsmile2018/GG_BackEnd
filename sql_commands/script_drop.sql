@@ -2,14 +2,15 @@
 \! tput setaf 2;
 alter table friends drop constraint users_friends;
 alter table black_list drop constraint users_black_list;
-alter table chats drop constraint users_chats;
+alter table users_chats drop constraint users_users_chats;
 alter table balance drop constraint users_balance;
 alter table finance drop constraint users_finance;
 alter table commands drop constraint users_commands;
 alter table history_structure drop constraint users_history_structure;
 alter table messages drop constraint chats_messages;
 alter table history_structure drop constraint histories_history_structure;
-
+alter table command_structure drop constraint users_command_structure;
+alter table command_structure drop constraint commands_command_structure;
 
 \! tput setaf 1; echo "_______________delete all rows from all tables _________________";
 \! tput setaf 2;
@@ -39,6 +40,7 @@ drop table command_structure;
 drop table history_structure;
 drop table histories;
 drop table users;
+drop table users_chats;
 
 \! tput setaf 1; echo "_________________________drop all types______________________________";
 \! tput setaf 2;

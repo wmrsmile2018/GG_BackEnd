@@ -3,6 +3,7 @@
 
 
 create table users (
+  number serial not null,
   id_user varchar primary key,
   email varchar,
   /* type_user type_user, */
@@ -29,6 +30,7 @@ create table users (
 
 
 create table black_list (
+  number serial not null,
   id_user varchar,
   id_black_user varchar
   );
@@ -40,6 +42,7 @@ create table black_list (
 
 
 create table friends (
+  number serial not null,
   id_user varchar,
   id_friend varchar
   );
@@ -51,6 +54,7 @@ create table friends (
 
 
 create table messages (
+  number serial not null,
   id_message varchar primary key,
   id_user varchar,
   id_chat varchar,
@@ -71,6 +75,7 @@ create table users_chats (
 
 
 create table chats (
+  number serial not null,
   id_chat varchar primary key,
   id_user varchar,
   type_chat type_chat
@@ -107,6 +112,7 @@ create table finance (
 
 
 create table commands (
+  number serial not null,
   id_command varchar primary key,
   id_user varchar unique not null
   );
@@ -129,6 +135,7 @@ create table command_structure (
 
 
 create table histories (
+  number serial not null,
   id_history varchar primary key
   );
 

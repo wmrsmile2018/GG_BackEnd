@@ -16,11 +16,11 @@ var (
 
 type Hub struct {
 	AllConnections map[*ChatClients]bool
-	Send			chan *model.Send
-	Register		chan *ChatClients
-	Unregister		chan *ChatClients
-	Store			store.Store
-	AllConns		map[string]map[*ChatClients]bool
+	Send           chan *model.Send
+	Register       chan *ChatClients
+	Unregister     chan *ChatClients
+	Store          store.Store
+	AllConns       map[string]map[*ChatClients]bool
 }
 
 func NewHub(store store.Store) *Hub {
@@ -29,8 +29,8 @@ func NewHub(store store.Store) *Hub {
 		Unregister:     make(chan *ChatClients),
 		AllConnections: make(map[*ChatClients]bool), // clients
 		Store:          store,
-		AllConns: 		make(map[string]map[*ChatClients]bool),
-		Send:			make(chan *model.Send),
+		AllConns:       make(map[string]map[*ChatClients]bool),
+		Send:           make(chan *model.Send),
 	}
 }
 
@@ -53,7 +53,8 @@ func (h *Hub) Run() {
 			send.Message.TimeCreateM = time.Now().Unix()
 
 			if send.Message.TypeChat == "general" {
-				h.Store.User().CreateMessage(send.Message)
+				//h.Store.User().CreateMessage(send.Message)
+				fmt.Println(h.Store.User().CreateMessage(send.Message))
 				if len(h.AllConnections) != 0 {
 					for conn := range h.AllConnections {
 						var s model.Send
@@ -70,8 +71,9 @@ func (h *Hub) Run() {
 				}
 			} else {
 				users := getUsers(h, send.Message.IdChat)
-				if users != nil  && users[send.User.ID] {
-					h.Store.User().CreateMessage(send.Message)
+				if users != nil && users[send.User.ID] {
+					fmt.Println("i am here")
+					fmt.Println(h.Store.User().CreateMessage(send.Message))
 					for user := range users {
 						connections := h.AllConns[user]
 						if len(connections) != 0 {
@@ -96,7 +98,7 @@ func (h *Hub) Run() {
 	}
 }
 
-func getUsers (h *Hub, id string)  map[string]bool {
+func getUsers(h *Hub, id string) map[string]bool {
 	users, err := h.Store.User().FindByChat(id)
 	if err != nil {
 		return nil
