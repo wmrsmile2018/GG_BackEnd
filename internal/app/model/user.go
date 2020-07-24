@@ -7,14 +7,18 @@ import (
 )
 
 type User struct {
-	ID                string `json:"id"`
-	Email             string `json:"email"`
-	Password          string `json:"password,omitempty"`
-	EncryptedPassword string `json:"-"`
+	ID					string `json:"id"`
+	Email				string `json:"email"`
+	Password			string `json:"password,omitempty"`
+	Birthday			string `json:"birthday"`
+	Sex					string `json:"sex"`
+	Login				string `json:"login"`
+	EncryptedPassword 	string `json:"-"`
+	TypeUser			string `json:"typeUser"`
+	CreationDate		string `json:"creationDate"`
 }
 
 func (u *User) Validate() error {
-
 	return validation.ValidateStruct(
 		u,
 		validation.Field(&u.Email, validation.Required, is.Email),

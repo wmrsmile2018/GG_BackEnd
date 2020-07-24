@@ -78,7 +78,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *server) configureRouter() {
 	header := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"})
-	origins := handlers.AllowedOrigins([]string{"http://localhost:3000"})
+	origins := handlers.AllowedOrigins([]string{"http://localhost:3001"})
 	credentials := handlers.AllowCredentials()
 
 
@@ -92,7 +92,7 @@ func (s *server) configureRouter() {
 	//s.router.HandleFunc("/createChat", s.handleCreateUserChat()).Methods("POST")
 
 
-	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST") // создание нового юзера
+	s.router.HandleFunc("/signup", s.handleUsersCreate()).Methods("POST") // создание нового юзера
 
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
 
@@ -377,19 +377,31 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 
 func (s *server) handleUsersCreate() http.HandlerFunc {
 	type request struct { // ожидаемые поля от пользователя при регистрации
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email    		string `json:"email"`
+		Password 		string `json:"password"`
+		Birthday 		string `json:"birthday"`
+		Sex		 		string `json:"sex"`
+		Login	 		string `json:"login"`
+		CreationDate 	string `json:"creationDate"`
+		TypeUser		string `json:"typeUser"`
 	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("request____________    ",r)
 		req := &request{}
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
 		u := &model.User{
-			Email:    req.Email,
-			Password: req.Password,
-			ID:       uuid.New().String(),
+			Birthday:		req.Birthday,
+			Sex: 			req.Sex,
+			Login: 			req.Login,
+			Email:    		req.Email,
+			Password: 		req.Password,
+			CreationDate: 	req.CreationDate,
+			TypeUser: 		req.TypeUser,
+			ID:       	uuid.New().String(),
 		}
 		if _, err := s.store.User().CreateUser(u); err != nil {
 			s.error(w, r, http.StatusUnprocessableEntity, err)

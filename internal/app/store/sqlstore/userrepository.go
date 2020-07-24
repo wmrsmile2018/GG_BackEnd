@@ -2,8 +2,10 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/wmrsmile2018/GG/internal/app/model"
 	"github.com/wmrsmile2018/GG/internal/app/store"
+	"strconv"
 	"time"
 )
 
@@ -12,9 +14,18 @@ type UserRepository struct {
 	store *Store
 }
 
+
 //CreateUser - create new user
 func (r *UserRepository) CreateUser(u *model.User) (*model.User, error) {
 	var sU model.User
+	//testTimeStamp := time.Unix(time.Now().Unix(), 0).Format(time.RFC3339)
+
+	//fmt.Println("time now ____", time.Now().Unix())
+	birthInt64, _ := strconv.ParseInt(u.Birthday, 10, 64)
+	creationDInt64, _ := strconv.ParseInt(u.CreationDate, 10, 64)
+	birth := time.Unix(birthInt64 / 1000, 0).Format(time.RFC3339)
+	creationD := time.Unix(creationDInt64 / 1000, 0).Format(time.RFC3339)
+	fmt.Println("creation Date _______ ",creationD, "\n Birthday ________ ", birth)
 	if err := u.Validate(); err != nil {
 		return nil, err
 	}
@@ -22,14 +33,24 @@ func (r *UserRepository) CreateUser(u *model.User) (*model.User, error) {
 		return nil, err
 	}
 	if err := r.store.db.QueryRow(
-		"INSERT INTO users (id_user, email, encrypted_password) VALUES ($1, $2, $3) RETURNING id_user, email, encrypted_password",
+		"INSERT INTO users (id_user, email, encrypted_password, login, birthday, type_user, creation_date, sex) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_user, email, encrypted_password, login, birthday, type_user, creation_date, sex",
 		u.ID,
 		u.Email,
 		u.EncryptedPassword,
+		u.Login,
+		birth,
+		u.TypeUser,
+		creationD,
+		u.Sex,
 	).Scan(
 		&sU.ID,
 		&sU.Email,
 		&sU.EncryptedPassword,
+		&sU.Login,
+		&sU.Birthday,
+		&sU.TypeUser,
+		&sU.CreationDate,
+		&sU.Sex,
 		); err != nil {
 			return nil, err
 	}

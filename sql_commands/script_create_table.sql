@@ -6,16 +6,16 @@ create table users (
   number serial not null,
   id_user varchar primary key,
   email varchar unique,
-  /* type_user type_user, */
+  type_user type_user,
   /* mob_number varchar, */
-  /* login varchar, */
-  /* date_of_brth timestamp, */
-  /* sex sex, */
-  first_profit timestamp,
+  login varchar,
+  birthday timestamp,
+  sex sex,
+--   first_profit timestamp,
   encrypted_password varchar,
   /* status varchar, */
   /* avatar varchar, */
-  /* account_creation_date timestamp, */
+  creation_date timestamp,
   /* url_vk varchar, */
   /* url_facebook varchar, */
   /* url_twitter varchar, */
@@ -25,9 +25,9 @@ create table users (
   );
 
 
-\! tput setaf 3; "____________________________________________________________________________________";
-\! tput setaf 1; "___________________________create table black_list ____________________________";
-\! tput setaf 2;
+-- \! tput setaf 3; "____________________________________________________________________________________";
+-- \! tput setaf 1; "___________________________create table black_list ____________________________";
+-- \! tput setaf 2;
 
 
 create table black_list (
