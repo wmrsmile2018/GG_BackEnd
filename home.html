@@ -45,6 +45,9 @@
             };
 
             if (window["WebSocket"]) {
+                console.log(document.location.host);
+                console.log("ws://" + document.location.host + "/ws" + "?id=" + user_id1);
+
                 conn = new WebSocket("ws://" + document.location.host + "/ws" + "?id=" + user_id1);
                 window.conn = conn;
                 conn.onclose = function (evt) {

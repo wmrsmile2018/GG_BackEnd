@@ -3,6 +3,7 @@ package teststore
 import (
 	"github.com/wmrsmile2018/GG/internal/app/model"
 	"github.com/wmrsmile2018/GG/internal/app/store"
+	"strconv"
 )
 
 //UserRepository ...
@@ -11,8 +12,16 @@ type UserRepository struct {
 	users map[string]*model.User
 }
 
-func (r *UserRepository) CreateUser(*model.User) error {
-	panic("implement me")
+func (r * UserRepository) CreateUser(u *model.User) (*model.User, error) {
+	if err := u.Validate(); err != nil {
+		return nil, err
+	}
+	if err := u.BeforeCreate(); err != nil {
+		return nil, err
+	}
+	u.ID = strconv.Itoa(len(r.users) + 1)
+	r.users[u.ID] = u
+	return u, nil
 }
 
 func (r *UserRepository) Find(idUser string) (*model.User, error) {
@@ -30,30 +39,17 @@ func (r *UserRepository) FindByChat(idChat string) (map[string]bool, error) {
 func (r *UserRepository) CreateMessage(message *model.Message) (*model.Message, error) {
 	panic("implement me")
 }
-//
-//func (r *UserRepository) Find(id int) (*model.User, error) {
-//	u, ok := r.users[id]
-//	if !ok {
-//		return nil, store.ErrRecordNotFound
-//	}
-//	return u, nil
-//}
 
-// Create ...
-func (r *UserRepository) Create(u *model.User) error {
-	if err := u.Validate(); err != nil {
-		return err
-	}
+func (r *UserRepository) PaginationMessages(params *model.ParametersPagination) ([]model.Message, error){
+	panic("implement me")
+}
 
-	if err := u.BeforeCreate(); err != nil {
-		return err
-	}
+func (r *UserRepository) CreateChat(idChat string, idUser string, typeChat string) (*model.Chat, error) {
+	panic("implement me")
+}
 
-	u.ID = len(r.users) + 1
-	r.users[u.ID] = u
-
-
-	return nil
+func (r *UserRepository) CreateUserChat(idChat string, idUser string) (*model.UserChat, error) {
+	panic("implement me")
 }
 
 //FindByEmail ...

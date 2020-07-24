@@ -38,7 +38,7 @@ func TestServer_AuthenticatedUser(t *testing.T) {
 	}
 
 	secretKey := []byte("secret")
-	s := newServer(store, sessions.NewCookieStore(secretKey))
+	s := newServer(nil, store, sessions.NewCookieStore(secretKey))
 	sc := securecookie.New(secretKey, nil)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -58,7 +58,7 @@ func TestServer_AuthenticatedUser(t *testing.T) {
 }
 
 func TestServer_HandleUsersCreate(t *testing.T) {
-	s := newServer(teststore.New(), sessions.NewCookieStore([]byte("secret")))
+	s := newServer(nil, teststore.New(), sessions.NewCookieStore([]byte("secret")))
 	testCases := []struct {
 		name         string
 		payload      interface{}
@@ -102,7 +102,7 @@ func TestServer_HandleSessionsCreate(t *testing.T) {
 	u := model.TestUser(t)
 	store := teststore.New()
 	store.User().CreateUser(u)
-	s := newServer(store, sessions.NewCookieStore([]byte("secret")))
+	s := newServer(nil, store, sessions.NewCookieStore([]byte("secret")))
 	testCases := []struct {
 		name         string
 		payload      interface{}

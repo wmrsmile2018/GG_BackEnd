@@ -58,7 +58,6 @@ func (c *ChatClients) ReadPump() {
 		send.User, err = c.hub.Store.User().Find(message.IdUser)
 		send.Message = &message
 		c.hub.Send <- &send
-
 	}
 }
 
@@ -80,12 +79,12 @@ func (c *ChatClients) WritePump() {
 			if err != nil {
 				return
 			}
-			_, err = json.Marshal(send)
+			data, err := json.Marshal(send)
 			if err != nil {
 				return
 			}
-			//w.Write(data)
-			w.Write([]byte(send.Message.Message))
+			w.Write(data)
+			//w.Write([]byte(send.Message.Message))
 			//Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {

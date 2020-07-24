@@ -12,7 +12,7 @@ type UserRepository struct {
 	store *Store
 }
 
-//Create...
+//CreateUser - create new user
 func (r *UserRepository) CreateUser(u *model.User) (*model.User, error) {
 	var sU model.User
 	if err := u.Validate(); err != nil {
@@ -22,7 +22,7 @@ func (r *UserRepository) CreateUser(u *model.User) (*model.User, error) {
 		return nil, err
 	}
 	if err := r.store.db.QueryRow(
-		"INSERT INTO users (id_user, email, encrypted_password) VALUES ($1, $2, $3) RETURNING (id_user, email, encrypted_password)",
+		"INSERT INTO users (id_user, email, encrypted_password) VALUES ($1, $2, $3) RETURNING id_user, email, encrypted_password",
 		u.ID,
 		u.Email,
 		u.EncryptedPassword,
@@ -36,6 +36,7 @@ func (r *UserRepository) CreateUser(u *model.User) (*model.User, error) {
 	return &sU, nil
 }
 
+//CreateChat - create new unique chat
 func (r *UserRepository) CreateChat(idChat string, idUser string, typeChat string) (*model.Chat, error) {
 	var c model.Chat
 	if err := r.store.db.QueryRow(
@@ -53,6 +54,7 @@ func (r *UserRepository) CreateChat(idChat string, idUser string, typeChat strin
 	return &c, nil
 }
 
+//CreateUserChat - create new records about users inside 1 chat
 func (r *UserRepository) CreateUserChat(idChat string, idUser string) (*model.UserChat, error) {
 	var c model.UserChat
 	if err := r.store.db.QueryRow(

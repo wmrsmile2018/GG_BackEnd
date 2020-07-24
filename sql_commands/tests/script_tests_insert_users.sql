@@ -28,3 +28,4 @@ insert into users (id_user, email, encrypted_password) values ('a0eebc99-9c0b-4e
 insert into users (id_user, email, encrypted_password) values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a37', 'test1@gmail.com', 'encrypt_password');
 insert into users (id_user, email, encrypted_password) values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a38', 'test1@gmail.com', 'encrypt_password');
 insert into users (id_user, email, encrypted_password) values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a39', 'test1@gmail.com', 'encrypt_password');
+insert into users (id_user, email, encrypted_password) values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a40', 'test1@gmail.com', 'encrypt_password');

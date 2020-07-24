@@ -16,7 +16,8 @@ func TestUserRepository_Create(t *testing.T) {
 
 	s := sqlstore.New(db)
 	u := model.TestUser(t)
-	assert.NoError(t, s.User().CreateUser(u))
+	_, err := s.User().CreateUser(u)
+	assert.NoError(t, err)
 	assert.NotNil(t, u)
 }
 

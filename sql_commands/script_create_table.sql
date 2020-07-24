@@ -5,22 +5,23 @@
 create table users (
   number serial not null,
   id_user varchar primary key,
-  email varchar,
+  email varchar unique,
   /* type_user type_user, */
   /* mob_number varchar, */
   /* login varchar, */
-  /* date_of_brth date, */
+  /* date_of_brth timestamp, */
   /* sex sex, */
-  encrypted_password varchar
+  first_profit timestamp,
+  encrypted_password varchar,
   /* status varchar, */
   /* avatar varchar, */
-  /* account_creation_date date, */
+  /* account_creation_date timestamp, */
   /* url_vk varchar, */
   /* url_facebook varchar, */
   /* url_twitter varchar, */
   /* url_instagram varchar, */
   /* url_twitch varchar, */
-  /* url_youtube varchar */
+   url_youtube varchar
   );
 
 
@@ -136,7 +137,8 @@ create table command_structure (
 
 create table histories (
   number serial not null,
-  id_history varchar primary key
+  id_history varchar primary key,
+  type_mode type_mode
   );
 
 
@@ -146,6 +148,8 @@ create table histories (
 
 
 create table history_structure (
+  number serial not null,
+  type_mode type_mode,
   id_history varchar,
   id_user varchar,
   id_command varchar,

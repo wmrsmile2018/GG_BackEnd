@@ -76,26 +76,47 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
-	s.router.Use(s.setRequestID) // подставляет для каждого входящего запроса уникальный id для передачи в заголовки и для лога
-	s.router.Use(s.logRequest)
-	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"}))) // если запрос приходит с другого порта
+	header := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"})
+	origins := handlers.AllowedOrigins([]string{"http://localhost:3000"})
+	credentials := handlers.AllowCredentials()
+
+
+
+	s.router.Use(s.setRequestID)  // для каждошго запроса свой уникальный ID
+	s.router.Use(s.logRequest) // лог в консоль у сервера
+	s.router.Use(handlers.CORS(header, methods, origins, credentials)) // если запрос приходит с другого порта
+	//POST
 	s.router.HandleFunc("/createChat", s.handleCreateChat()).Methods("POST")
 	s.router.HandleFunc("/createUserChat", s.handleCreateUserChat()).Methods("POST")
-	s.router.HandleFunc("/createChat", s.handleCreateUserChat()).Methods("POST")
-	s.router.HandleFunc("/getMessages", s.handleGetMessage()).Methods("GET")
-	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
+	//s.router.HandleFunc("/createChat", s.handleCreateUserChat()).Methods("POST")
+
+
+	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST") // создание нового юзера
+
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
-	s.router.HandleFunc("/ws", s.handleWS())
+
+	//GET
+	s.router.HandleFunc("/getMessages", s.handleGetMessage()).Methods("GET")
+	s.router.HandleFunc("/ws", s.handleWS()).Methods("GET")
 	s.router.HandleFunc("/test", s.handleTest()).Methods("GET")
+
+	//....
+	s.router.HandleFunc("/ws", s.handleDeleteChat())
+	s.router.HandleFunc("/test", s.handleAddUserToChat())
+
 
 	//chats/***
 	chat := s.router.PathPrefix("/chat").Subrouter()
 	chat.HandleFunc("/general", s.handleUsersGeneralChat()).Methods("GET")
 	chat.HandleFunc("/local", s.handleUsersLocalChat()).Methods("GET")
+
 	//private/***
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handleWhoAmI()).Methods("GET")
+
+
 }
 
 func (s *server) handleTest() http.HandlerFunc {
@@ -114,14 +135,31 @@ func (s *server) handleTest() http.HandlerFunc {
 	}
 }
 
+func (s *server) handleDeleteChat() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("chat deleted")
+	}
+}
+
+func (s *server) handleAddUserToChat() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("user added")
+	}
+}
+
 func (s *server) handleWS() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		upgrader.CheckOrigin = func(r *http.Request) bool {
+			return true
+		}
 		ws, err := upgrader.Upgrade(w, r, nil)
+
 		if err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
 		if err = r.ParseForm(); err != nil {
+			fmt.Println(err)
 			s.error(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -149,8 +187,8 @@ func (s *server) handleWS() http.HandlerFunc {
 //-d '{"idChat":"a0eebc79-9c0b-4ef8-bb6d-6bb9bd380a16", "idUser":"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a10", "TypeChat": "twosome"}' http://localhost:8000/createChat
 func (s *server) handleCreateChat() http.HandlerFunc {
 	type Chat struct {
-		IdChat string
-		IdUser string
+		IdChat   string
+		IdUser   string
 		TypeChat string
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -273,6 +311,7 @@ func (s *server) logRequest(next http.Handler) http.Handler {
 
 func (s *server) authenticateUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//setupResponse(&w, r)
 		session, err := s.sessionsStore.Get(r, sessionName)
 		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
@@ -298,6 +337,7 @@ func (s *server) authenticateUser(next http.Handler) http.Handler {
 
 func (s *server) handleWhoAmI() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		//setupResponse(&w, r)
 		s.respond(w, r, http.StatusOK, r.Context().Value(ctxKeyUser).(*model.User))
 	}
 }
@@ -308,6 +348,7 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 		Password string `json:"password"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		//setupResponse(&w, r)
 		req := &request{}
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			s.error(w, r, http.StatusBadRequest, err)
@@ -357,6 +398,15 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 		s.respond(w, r, http.StatusCreated, u)
 	}
 }
+
+//func setupResponse(w *http.ResponseWriter, r *http.Request) {
+//	(*w).Header().Set("Access-Control-Allow-Credentials", "true")
+//	(*w).Header().Set("Content-Type", "text/html; charset=utf-8")
+//	(*w).Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+//	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+//	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, " +
+//		"Accept-Encoding, X-CSRF-Token, Authorization, Content-Type,access-control-allow-origin, access-control-allow-headers")
+//}
 
 func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err error) {
 	s.respond(w, r, code, map[string]string{"error__": err.Error()})
